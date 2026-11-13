@@ -587,9 +587,11 @@ namespace UnityEngine.Rendering.PostProcessing
 
             bool isFogActive = fog.IsEnabledAndSupported(context);
             bool hasCustomOpaqueOnlyEffects = HasOpaqueOnlyEffects(context);
+            bool isMotionBlurOpaque = IsMotionBlurBeforeTransparent(context);
             int opaqueOnlyEffects = 0;
             opaqueOnlyEffects += isScreenSpaceReflectionsActive ? 1 : 0;
             opaqueOnlyEffects += isFogActive ? 1 : 0;
+            opaqueOnlyEffects += isMotionBlurOpaque ? 1 : 0;
             opaqueOnlyEffects += hasCustomOpaqueOnlyEffects ? 1 : 0;
 
             // This works on right eye because it is resolved/populated at runtime
@@ -622,6 +624,16 @@ namespace UnityEngine.Rendering.PostProcessing
                 if (isFogActive)
                 {
                     fog.Render(context);
+                    opaqueOnlyEffects--;
+                    UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
+                }
+
+                if (isMotionBlurOpaque)
+                {
+                    // The velocity buffer is built in this buffer too, just before the blur reads it.
+                    context.motionCommand = cmd;
+                    GetBundle<MotionBlur>().renderer.Render(context);
+                    context.motionCommand = m_LegacyCmdBufferMotion;
                     opaqueOnlyEffects--;
                     UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
                 }
@@ -1178,6 +1190,14 @@ namespace UnityEngine.Rendering.PostProcessing
             properties.SetVector(ShaderIDs.UVTransform, SystemInfo.graphicsUVStartsAtTop ? new Vector4(1.0f, -1.0f, 0.0f, 1.0f) : new Vector4(1.0f, 1.0f, 0.0f, 0.0f));
         }
 
+        /// <summary>Motion blur runs with the opaque-only effects (before transparents) rather than in the builtin stack.</summary>
+        bool IsMotionBlurBeforeTransparent(PostProcessRenderContext context)
+        {
+            var bundle = GetBundle<MotionBlur>();
+            var settings = bundle.CastSettings<MotionBlur>();
+            return settings.IsEnabledAndSupported(context) && settings.beforeTransparent.value && (!m_IsRenderingInSceneView || bundle.attribute.allowInSceneView);
+        }
+
         int RenderBuiltins(PostProcessRenderContext context, bool isFinalPass, int releaseTargetAfterUse = -1, int eye = -1)
         {
             var uberSheet = context.propertySheets.Get(context.resources.shaders.uber);
@@ -1215,7 +1235,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
             // Motion blur is a separate pass - could potentially be done after DoF depending on the
             // kind of results you're looking for...
-            int motionBlurTarget = RenderEffect<MotionBlur>(context, true);
+            int motionBlurTarget = IsMotionBlurBeforeTransparent(context) ? -1 : RenderEffect<MotionBlur>(context, true);
 
             // Prepare exposure histogram if needed
             if (ShouldGenerateLogHistogram(context))

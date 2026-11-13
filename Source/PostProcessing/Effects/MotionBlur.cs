@@ -43,6 +43,13 @@ namespace UnityEngine.Rendering.PostProcessing
         public BoolParameter objectMotion = new BoolParameter { value = true };
 
         /// <summary>
+        /// Blur the opaque scene before transparent effects are drawn. Exhaust, flares, chaff, tracers and smoke write no
+        /// depth or motion, so blurred afterwards they take the motion of whatever is behind them and smear across the sky.
+        /// </summary>
+        [Tooltip("Blur before transparent effects (exhaust, flares, tracers, smoke), which then stay sharp.")]
+        public BoolParameter beforeTransparent = new BoolParameter { value = true };
+
+        /// <summary>
         /// Longest blur streak, in percent of the screen height.
         /// </summary>
         [Range(1f, 10f), Tooltip("Longest blur, percent of screen height.")]
@@ -73,6 +80,7 @@ namespace UnityEngine.Rendering.PostProcessing
             loadIntParameter(config, "SampleCount", sampleCount);
             loadFloatParameter(config, "ShutterFps", shutterFps);
             loadBoolParameter(config, "ObjectMotion", objectMotion);
+            loadBoolParameter(config, "BeforeTransparent", beforeTransparent);
             loadFloatParameter(config, "MaxBlurRadius", maxBlurRadius);
         }
 
@@ -82,6 +90,7 @@ namespace UnityEngine.Rendering.PostProcessing
             saveIntParameter(config, "SampleCount", sampleCount);
             saveFloatParameter(config, "ShutterFps", shutterFps);
             saveBoolParameter(config, "ObjectMotion", objectMotion);
+            saveBoolParameter(config, "BeforeTransparent", beforeTransparent);
             saveFloatParameter(config, "MaxBlurRadius", maxBlurRadius);
         }
 

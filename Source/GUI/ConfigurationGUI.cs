@@ -570,6 +570,7 @@ namespace TUFX
 				AddFloatParameter("Shutter Angle", mb.shutterAngle, 0f, 360f);
 				AddFloatParameter("Shutter FPS", mb.shutterFps, 0f, 120f);
 				AddBoolParameter("Object Motion", mb.objectMotion);
+				AddBoolParameter("Before Transparent", mb.beforeTransparent);
 				AddFloatParameter("Max Blur %", mb.maxBlurRadius, 1f, 10f);
 				AddIntParameter("Sample Count", mb.sampleCount, 4, 32);
 			}
