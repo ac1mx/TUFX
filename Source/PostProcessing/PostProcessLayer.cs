@@ -197,6 +197,7 @@ namespace UnityEngine.Rendering.PostProcessing
         CommandBuffer m_LegacyCmdBufferBeforeLighting;
         CommandBuffer m_LegacyCmdBufferOpaque;
         CommandBuffer m_LegacyCmdBuffer;
+        CommandBuffer m_LegacyCmdBufferMotion;
         Camera m_Camera;
         PostProcessRenderContext m_CurrentContext;
         LogHistogram m_LogHistogram;
@@ -238,6 +239,7 @@ namespace UnityEngine.Rendering.PostProcessing
             m_LegacyCmdBufferBeforeLighting = new CommandBuffer { name = "Deferred Ambient Occlusion" };
             m_LegacyCmdBufferOpaque = new CommandBuffer { name = "Opaque Only Post-processing" };
             m_LegacyCmdBuffer = new CommandBuffer { name = "Post-processing" };
+            m_LegacyCmdBufferMotion = new CommandBuffer { name = "Post-processing motion vectors" };
 
             m_Camera = GetComponent<Camera>();
 
@@ -248,6 +250,7 @@ namespace UnityEngine.Rendering.PostProcessing
             m_Camera.AddCommandBuffer(CameraEvent.BeforeReflections, m_LegacyCmdBufferBeforeReflections);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeLighting, m_LegacyCmdBufferBeforeLighting);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, m_LegacyCmdBufferOpaque);
+            m_Camera.AddCommandBuffer(CameraEvent.AfterForwardAlpha, m_LegacyCmdBufferMotion);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffects, m_LegacyCmdBuffer);
 
             // Internal context used if no SRP is set
@@ -380,6 +383,8 @@ namespace UnityEngine.Rendering.PostProcessing
                     m_Camera.RemoveCommandBuffer(CameraEvent.BeforeLighting, m_LegacyCmdBufferBeforeLighting);
                 if (m_LegacyCmdBufferOpaque != null)
                     m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, m_LegacyCmdBufferOpaque);
+                if (m_LegacyCmdBufferMotion != null)
+                    m_Camera.RemoveCommandBuffer(CameraEvent.AfterForwardAlpha, m_LegacyCmdBufferMotion);
                 if (m_LegacyCmdBuffer != null)
                     m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, m_LegacyCmdBuffer);
             }
@@ -533,6 +538,8 @@ namespace UnityEngine.Rendering.PostProcessing
             m_LegacyCmdBufferBeforeLighting.Clear();
             m_LegacyCmdBufferOpaque.Clear();
             m_LegacyCmdBuffer.Clear();
+            m_LegacyCmdBufferMotion.Clear();
+            context.motionCommand = m_LegacyCmdBufferMotion;
 
             SetupContext(context);
 
@@ -784,7 +791,7 @@ namespace UnityEngine.Rendering.PostProcessing
             foreach (var bundle in m_Bundles)
             {
                 if (bundle.Value.settings.IsEnabledAndSupported(context))
-                    flags |= bundle.Value.renderer.GetCameraFlags();
+                    flags |= bundle.Value.renderer.GetCameraFlags(context);
             }
 
             // Special case for AA & lighting effects

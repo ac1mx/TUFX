@@ -33,6 +33,14 @@ namespace UnityEngine.Rendering.PostProcessing
         }
 
         /// <summary>
+        /// Camera-aware variant of <see cref="GetCameraFlags()"/>; defaults to it.
+        /// </summary>
+        public virtual DepthTextureMode GetCameraFlags(PostProcessRenderContext context)
+        {
+            return GetCameraFlags();
+        }
+
+        /// <summary>
         /// Resets the history state for this renderer. This is automatically called when
         /// <see cref="PostProcessLayer.ResetHistory"/> is called by the user.
         /// </summary>

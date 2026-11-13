@@ -60,6 +60,8 @@ namespace TUFX
 			[Persistent] public string IVAProfile = "Default-Internal";
 			[Persistent] public string TrackingStationProfile = "Default-Tracking";
 			[Persistent] public bool ShowToolbarButton = true;
+			// Logs generated motion-blur motion against analytic values once a second (flight camera).
+			[Persistent] public bool MotionVectorCheck = false;
 
 			public string GetProfileName(TUFXScene scene)
 			{
@@ -231,6 +233,19 @@ namespace TUFX
 				Log.Debug(e.ToString());
 			}
 
+			// TUFX's own shaders (motion blur with NaN/infinity guards); optional, stock shaders are the fallback.
+			string motionBundle = KSPUtil.ApplicationRootPath + "GameData/TUFX/Shaders/tufx-motion.ssf";
+			if (System.IO.File.Exists(motionBundle))
+			{
+				bundle = AssetBundle.LoadFromFile(motionBundle);
+				if (bundle != null)
+				{
+					foreach (Shader shader in bundle.LoadAllAssets<Shader>())
+						if (!this.shaders.ContainsKey(shader.name)) { this.shaders.Add(shader.name, shader); }
+					bundle.Unload(false);
+				}
+			}
+
 			#region REGION - Load standard Post Process Effect Shaders
 			Resources.shaders.bloom = getShader("Hidden/PostProcessing/Bloom");
 			Resources.shaders.copy = getShader("Hidden/PostProcessing/Copy");
@@ -245,7 +260,7 @@ namespace TUFX
 			Resources.shaders.grainBaker = getShader("Hidden/PostProcessing/GrainBaker");
 			Resources.shaders.lightMeter = getShader("Hidden/PostProcessing/Debug/LightMeter");//TODO - part of debug shaders?
 			Resources.shaders.lut2DBaker = getShader("Hidden/PostProcessing/Lut2DBaker");
-			Resources.shaders.motionBlur = getShader("Hidden/PostProcessing/MotionBlur");
+			Resources.shaders.motionBlur = getShader(MotionBlur.GuardedShaderName) ?? getShader("Hidden/PostProcessing/MotionBlur");
 			Resources.shaders.multiScaleAO = getShader("Hidden/PostProcessing/MultiScaleVO");
 			Resources.shaders.scalableAO = getShader("Hidden/PostProcessing/ScalableAO");
 			Resources.shaders.screenSpaceReflections = getShader("Hidden/PostProcessing/ScreenSpaceReflections");

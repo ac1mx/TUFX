@@ -78,6 +78,12 @@ namespace UnityEngine.Rendering.PostProcessing
         public CommandBuffer command { get; set; }
 
         /// <summary>
+        /// Command buffer executed after transparent geometry and before the post-processing stack, with the
+        /// camera's matrices and depth buffer current. Null when the layer does not provide one.
+        /// </summary>
+        public CommandBuffer motionCommand { get; set; }
+
+        /// <summary>
         /// The source target for this pass (can't be the same as <see cref="destination"/>).
         /// </summary>
         public RenderTargetIdentifier source { get; set; }
